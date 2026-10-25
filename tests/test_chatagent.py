@@ -164,7 +164,13 @@ def test_label_is_created_once_at_start(chat, monkeypatch, runs):
     calls = []
     monkeypatch.setattr(core.subprocess, "run", lambda cmd, **k: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, "", ""))
     AgentLoop(A, chat)
-    assert calls[0][:4] == ["gh", "label", "create", "testchat"] and "--force" in calls[0]
+    assert calls[0][:4] == ["gh", "label", "create", "testchat"] and "--force" not in calls[0]  # never repaint a label
+
+
+def test_an_existing_label_is_not_an_error(monkeypatch):
+    monkeypatch.setattr(core.subprocess, "run", lambda cmd, **k: subprocess.CompletedProcess(
+        cmd, 1, "", 'label with name "testchat" already exists; use `--force` to update its color and description'))
+    assert core.ensure_label(A, "testchat") is None
 
 
 def test_dry_run_prints_and_keeps_cursor(chat, runs, capsys):

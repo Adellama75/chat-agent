@@ -119,11 +119,14 @@ def list_issues(a: Agent) -> str:
 
 
 def ensure_label(a: Agent, label: str) -> str | None:
-    """Create the issue label if the repo lacks it. Returns gh's error, if any (--force: no-op if it exists)."""
-    out = subprocess.run(["gh", "label", "create", label, "--repo", a.repo, "--force",
+    """Create the issue label if the repo lacks it; an existing label (colour, description) is left
+    alone. Returns gh's error, if any."""
+    out = subprocess.run(["gh", "label", "create", label, "--repo", a.repo,
                           "--description", "Tracked from the team chat by chat-agent"],
                          capture_output=True, text=True)
-    return out.stderr.strip() if out.returncode else None
+    if out.returncode == 0 or "already exists" in out.stderr:
+        return None
+    return out.stderr.strip()
 
 
 def run_claude(a: Agent, system: str, prompt: str, tools: list[str] = ()) -> dict:
